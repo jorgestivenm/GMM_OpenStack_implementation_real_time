@@ -1,5 +1,25 @@
+import logging
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 parentdir = os.path.dirname(os.path.abspath('__file__'))
-iface = "wlp0s20f3"
+iface = os.getenv('IFACE')
 localstore = parentdir + "/localstore.txt"
+
+controller = os.getenv('CTRL')
+controller_port = os.getenv('CTRL_PORT')
+sw_table = os.getenv('TABLE')
+dpid_sw = os.getenv('SW')
+targets = os.getenv('TARGETS')
+hard_timeout = os.getenv('HARD_T')
+idle_timeout = os.getenv('IDLE_T')
+# Logger config
+logs_directory = os.path.dirname(
+    os.path.realpath(__file__)) + os.getenv('LOG_FILES_DIRECTORY')
+logging.basicConfig(
+    filename=logs_directory+'/gmm_detection.log', level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("gmm_detection")
