@@ -45,29 +45,70 @@ class ClassifierGMM():
                 ])
             if 'flow_duration' in data.columns:
                 # Odering columns
-                data = data[['flow_duration','tot_fwd_pkts','tot_bwd_pkts','totlen_fwd_pkts','totlen_bwd_pkts','fwd_pkt_len_max','fwd_pkt_len_min','fwd_pkt_len_mean','fwd_pkt_len_std','bwd_pkt_len_max',
-                    'bwd_pkt_len_min','bwd_pkt_len_mean','bwd_pkt_len_std','flow_byts_s','flow_pkts_s','flow_iat_mean','flow_iat_std','flow_iat_max','flow_iat_min','fwd_iat_tot','fwd_iat_mean','fwd_iat_std',
-                    'fwd_iat_max','fwd_iat_min','bwd_iat_tot','bwd_iat_mean','bwd_iat_std','bwd_iat_max','bwd_iat_min','fwd_psh_flags','bwd_psh_flags','fwd_urg_flags','bwd_urg_flags','fwd_header_len',
-                    'bwd_header_len','fwd_pkts_s','bwd_pkts_s','pkt_len_min','pkt_len_max','pkt_len_mean','pkt_len_std','pkt_len_var','fin_flag_cnt','syn_flag_cnt','rst_flag_cnt','psh_flag_cnt','ack_flag_cnt',
-                    'urg_flag_cnt','cwe_flag_count','ece_flag_cnt','down_up_ratio','pkt_size_avg','fwd_seg_size_avg','bwd_seg_size_avg','fwd_byts_b_avg','fwd_pkts_b_avg','fwd_blk_rate_avg','bwd_byts_b_avg',
-                    'bwd_pkts_b_avg','bwd_blk_rate_avg','subflow_fwd_pkts','subflow_fwd_byts','subflow_bwd_pkts','subflow_bwd_byts','init_fwd_win_byts','init_bwd_win_byts','fwd_act_data_pkts',
-                    'fwd_seg_size_min','active_mean','active_std','active_max','active_min','idle_mean','idle_std','idle_max','idle_min']]
+                data = data[[
+                    'flow_duration', 'tot_fwd_pkts', 'tot_bwd_pkts',
+                    'totlen_fwd_pkts', 'totlen_bwd_pkts', 'fwd_pkt_len_max',
+                    'fwd_pkt_len_min', 'fwd_pkt_len_mean', 'fwd_pkt_len_std',
+                    'bwd_pkt_len_max', 'bwd_pkt_len_min', 'bwd_pkt_len_mean',
+                    'bwd_pkt_len_std', 'flow_byts_s', 'flow_pkts_s',
+                    'flow_iat_mean', 'flow_iat_std', 'flow_iat_max',
+                    'flow_iat_min', 'fwd_iat_tot', 'fwd_iat_mean',
+                    'fwd_iat_std', 'fwd_iat_max', 'fwd_iat_min', 'bwd_iat_tot',
+                    'bwd_iat_mean', 'bwd_iat_std', 'bwd_iat_max',
+                    'bwd_iat_min', 'fwd_psh_flags', 'bwd_psh_flags',
+                    'fwd_urg_flags', 'bwd_urg_flags', 'fwd_header_len',
+                    'bwd_header_len', 'fwd_pkts_s', 'bwd_pkts_s',
+                    'pkt_len_min', 'pkt_len_max', 'pkt_len_mean',
+                    'pkt_len_std', 'pkt_len_var', 'fin_flag_cnt',
+                    'syn_flag_cnt', 'rst_flag_cnt', 'psh_flag_cnt',
+                    'ack_flag_cnt', 'urg_flag_cnt', 'cwe_flag_count',
+                    'ece_flag_cnt', 'down_up_ratio', 'pkt_size_avg',
+                    'fwd_seg_size_avg', 'bwd_seg_size_avg', 'fwd_byts_b_avg',
+                    'fwd_pkts_b_avg', 'fwd_blk_rate_avg', 'bwd_byts_b_avg',
+                    'bwd_pkts_b_avg', 'bwd_blk_rate_avg', 'subflow_fwd_pkts',
+                    'subflow_fwd_byts', 'subflow_bwd_pkts', 'subflow_bwd_byts',
+                    'init_fwd_win_byts', 'init_bwd_win_byts',
+                    'fwd_act_data_pkts', 'fwd_seg_size_min', 'active_mean',
+                    'active_std', 'active_max', 'active_min', 'idle_mean',
+                    'idle_std', 'idle_max', 'idle_min'
+                    ]]
                 # Rename column names
-                new_cols = ['Flow Duration', 'Total Fwd Packets', 'Total Backward Packets', 'Total Length of Fwd Packets', 'Total Length of Bwd Packets',
-                    'Fwd Packet Length Max', 'Fwd Packet Length Min', 'Fwd Packet Length Mean', 'Fwd Packet Length Std',
-                    'Bwd Packet Length Max', 'Bwd Packet Length Min', 'Bwd Packet Length Mean', 'Bwd Packet Length Std', 'Flow Bytes/s',
-                    'Flow Packets/s', 'Flow IAT Mean', 'Flow IAT Std', 'Flow IAT Max', 'Flow IAT Min', 'Fwd IAT Total', 'Fwd IAT Mean', 'Fwd IAT Std',
-                    'Fwd IAT Max', 'Fwd IAT Min', 'Bwd IAT Total', 'Bwd IAT Mean', 'Bwd IAT Std', 'Bwd IAT Max', 'Bwd IAT Min', 'Fwd PSH Flags',
-                    'Bwd PSH Flags', 'Fwd URG Flags', 'Bwd URG Flags', 'Fwd Header Length', 'Bwd Header Length', 'Fwd Packets/s', 'Bwd Packets/s',
-                    'Min Packet Length', 'Max Packet Length', 'Packet Length Mean', 'Packet Length Std', 'Packet Length Variance', 'FIN Flag Count',
-                    'SYN Flag Count', 'RST Flag Count', 'PSH Flag Count', 'ACK Flag Count', 'URG Flag Count', 'CWE Flag Count', 'ECE Flag Count', 'Down/Up Ratio',
-                    'Average Packet Size', 'Avg Fwd Segment Size', 'Avg Bwd Segment Size', 'Fwd Avg Bytes/Bulk', 'Fwd Avg Packets/Bulk', 'Fwd Avg Bulk Rate',
-                    'Bwd Avg Bytes/Bulk', 'Bwd Avg Packets/Bulk', 'Bwd Avg Bulk Rate', 'Subflow Fwd Packets', 'Subflow Fwd Bytes', 'Subflow Bwd Packets',
-                    'Subflow Bwd Bytes', 'Init_Win_bytes_forward', 'Init_Win_bytes_backward', 'act_data_pkt_fwd', 'min_seg_size_forward',
-                    'Active Mean', 'Active Std', 'Active Max', 'Active Min', 'Idle Mean', 'Idle Std', 'Idle Max', 'Idle Min']
+
+                new_cols = [
+                    'Flow Duration', 'Total Fwd Packets',
+                    'Total Backward Packets', 'Total Length of Fwd Packets',
+                    'Total Length of Bwd Packets', 'Fwd Packet Length Max',
+                    'Fwd Packet Length Min', 'Fwd Packet Length Mean',
+                    'Fwd Packet Length Std', 'Bwd Packet Length Max',
+                    'Bwd Packet Length Min', 'Bwd Packet Length Mean',
+                    'Bwd Packet Length Std', 'Flow Bytes/s', 'Flow Packets/s',
+                    'Flow IAT Mean', 'Flow IAT Std', 'Flow IAT Max',
+                    'Flow IAT Min', 'Fwd IAT Total', 'Fwd IAT Mean',
+                    'Fwd IAT Std', 'Fwd IAT Max', 'Fwd IAT Min',
+                    'Bwd IAT Total', 'Bwd IAT Mean', 'Bwd IAT Std',
+                    'Bwd IAT Max', 'Bwd IAT Min', 'Fwd PSH Flags',
+                    'Bwd PSH Flags', 'Fwd URG Flags', 'Bwd URG Flags',
+                    'Fwd Header Length', 'Bwd Header Length', 'Fwd Packets/s',
+                    'Bwd Packets/s', 'Min Packet Length', 'Max Packet Length',
+                    'Packet Length Mean', 'Packet Length Std',
+                    'Packet Length Variance', 'FIN Flag Count',
+                    'SYN Flag Count', 'RST Flag Count', 'PSH Flag Count',
+                    'ACK Flag Count', 'URG Flag Count', 'CWE Flag Count',
+                    'ECE Flag Count', 'Down/Up Ratio', 'Average Packet Size',
+                    'Avg Fwd Segment Size', 'Avg Bwd Segment Size',
+                    'Fwd Avg Bytes/Bulk', 'Fwd Avg Packets/Bulk',
+                    'Fwd Avg Bulk Rate', 'Bwd Avg Bytes/Bulk',
+                    'Bwd Avg Packets/Bulk', 'Bwd Avg Bulk Rate',
+                    'Subflow Fwd Packets', 'Subflow Fwd Bytes',
+                    'Subflow Bwd Packets', 'Subflow Bwd Bytes',
+                    'Init_Win_bytes_forward', 'Init_Win_bytes_backward',
+                    'act_data_pkt_fwd', 'min_seg_size_forward', 'Active Mean',
+                    'Active Std', 'Active Max', 'Active Min', 'Idle Mean',
+                    'Idle Std', 'Idle Max', 'Idle Min'
+                     ]
                 data.set_axis(new_cols, axis=1, inplace=True)
             elif 'Flow Duration' in data.columns:
-                data = data.drop(columns=['Destination Port','Label'])
+                data = data.drop(columns=['Destination Port', 'Label'])
             # Clean data
             data_clean = clean_Data2(data)
             return data_clean, metadata
@@ -211,8 +252,10 @@ class ClassifierGMM():
                     n_components=ngauss, covariance_type='diag', max_iter=200,
                     n_init=100, random_state=100)
                 GMM_Benign.fit(benign_gmm_data_model)
-                save_pickle(GMM_Attack, f'{parentdir}/ml/mlmodels/Attack_G{i}.pickle')
-                save_pickle(GMM_Benign, f'{parentdir}/ml/mlmodels/Benign_G{i}.pickle')
+                save_pickle(
+                    GMM_Attack, f'{parentdir}/ml/mlmodels/Attack_G{i}.pickle')
+                save_pickle(
+                    GMM_Benign, f'{parentdir}/ml/mlmodels/Benign_G{i}.pickle')
                 time_per_gaussian.append(time.time()-time_init)
 
                 time_init = time.time()
@@ -255,7 +298,9 @@ class ClassifierGMM():
 
     def evaluate_performance(self, results_by_gaussian):
         # Report of Precision, Sensitivity and Confusion Matrix
-        print(f'Explained Variance PCA = {self.performance["Explained_Variance_PCA"]}')
+        print(
+            f'Explained Variance PCA='
+            '{self.performance["Explained_Variance_PCA"]}')
         labels = ['attack', 'benign']
         i = 0
         for k, v in results_by_gaussian.items():
@@ -266,6 +311,8 @@ class ClassifierGMM():
             print('\nConfusion Matrix\n', metrics.confusion_matrix(
                 list(v[0][0]), v[0][1]))
             print(f'Trainig time={self.performance["training_time_by_G"][i]}')
-            print(f'Classification time={self.performance["classification_time_by_G"][i]}')
+            print(
+                f'Classification time='
+                '{self.performance["classification_time_by_G"][i]}')
             i += 1
             print('\n --------------------------------------------------- \n')

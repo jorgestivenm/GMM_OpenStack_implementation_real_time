@@ -199,6 +199,7 @@ while [ "$1" != "" ]; do
     shift
 done
 
+# install tcpreplay
 
 #modifying the utils.py from cicflowmeter
 """

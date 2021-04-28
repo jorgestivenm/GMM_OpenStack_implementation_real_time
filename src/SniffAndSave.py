@@ -3,10 +3,7 @@ import os
 import sys
 import time
 
-from pylibpcap.base import Sniff
-# root_folder = os.path.abspath(
-#   os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# sys.path.append(root_folder)
+from cicflowmeter.sniffer import create_sniffer
 from shared import iface, localstore, parentdir
 
 config = configparser.ConfigParser()
@@ -15,9 +12,18 @@ config = configparser.ConfigParser()
 def SniffAndSave(timeout=10):
     config.read(localstore)
     count = int(config['SNIFFER']['Count'])
-    sniffobj = Sniff(
-        iface, count=-1, promisc=1,
-        out_file=f"{parentdir}/captures/capture_{count}.pcap")
+    input_interface = iface
+    output_mode = 'flow'
+    url_model = None
+    output = f"{parentdir}/features/flow_{count}.csv"
+    input_file = None
+    sniffobj = create_sniffer(
+            input_file,
+            input_interface,
+            output_mode,
+            output,
+            url_model,
+        )
     tic = time.time()
     start = True
     while True:
@@ -27,28 +33,29 @@ def SniffAndSave(timeout=10):
                 start = False
             toc = time.time()
             if toc - tic >= timeout:
+                logger.info("Timeout, Stoping the current sniffer")
                 tic = time.time()
-                sniffobj.close()
+                sniffobj.stop()
                 count += 1
-                sniffobj = Sniff(
-                    iface, count=-1, promisc=1,
-                    out_file=f"{parentdir}/captures/capture_{count}.pcap")
+                sniffobj = create_sniffer(
+                        input_file,
+                        input_interface,
+                        output_mode,
+                        f"{parentdir}/features/flow_{count}.csv",
+                        url_model,
+                    )
                 start = True
                 config['SNIFFER']['Count'] = str(count)
                 f = open(localstore, 'w')
                 config.write(f)
                 f.close()
-                # stats = sniffobj.stats()
-                # print(stats.capture_cnt, " packets captured")
-                # print(stats.ps_recv, " packets received by filter")
-                # print(stats.ps_drop, "  packets dropped by kernel")
-                # print(stats.ps_ifdrop, "  packets dropped by iface")
         except Exception as e:
             print(e)
 
 
 def StartSniff(sniffer):
-    sniffer.capture()
+    sniffer.start()
+    logger.info("Stating a new Sniffer")
 
 
 if __name__ == '__main__':

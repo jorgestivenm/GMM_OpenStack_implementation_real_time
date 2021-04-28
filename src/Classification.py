@@ -2,6 +2,7 @@ import configparser
 import glob
 import os
 import sys
+import time
 
 import requests
 from shared import (controller, controller_port, dpid_sw, hard_timeout,
@@ -35,9 +36,10 @@ def classificator():
                     ) and input_file != os.path.join(
                         featuresdir, f'flow_{count + 1}.csv'
                         ) and input_file != os.path.join(
-                            featuresdir, f'flow_0.csv'):
-                    # logic
-                    print(f'analyzing the file:{input_file}')
+                            featuresdir, f'flow_0.csv'
+                            ):
+                    time.sleep(1)
+                    logger.info(f'analyzing the file:{input_file}')
                     data_clean, metadata = GmmClassifier.preprocess(
                         file=input_file)
                     std_data = GmmClassifier.standardize(data=data_clean)
@@ -46,43 +48,30 @@ def classificator():
                     detection = [i for i in range(
                         len(predicted_labels)) if predicted_labels[i] == 0]
                     if len(detection) > 0:
-                        print(detection)
-                        print(metadata.iloc[detection])
                         data_for_rules = metadata.iloc[detection]
-                        print('\ncurrently rules \n')
-                        r = requests.get(
-                            f'http://{controller}:{ctrl_port}{get_flows_stats}'
-                            )
-                        print(r.text)
-                        print('\ncreating rules to apply in the sw\n')
-                        for index, row in df.iterrows():
-                            src_ip = row['src_ip']
-                            dst_ip = row['dst_ip']
+                        data_for_rules = data_for_rules.drop_duplicates(
+                            subset=['src_ip', 'dst_ip'], keep=False,
+                            inplace=False)
+                        logger.info('creating rules to apply in the sw')
+                        url = f'http://{controller}:{controller_port}{add_flow_entry}'
+                        for index, row in data_for_rules.iterrows():
+                            src_ip = str(row['src_ip'])
+                            dst_ip = str(row['dst_ip'])
                             src_port = row['src_port']
                             dst_port = row['dst_port']
                             proto = row['protocol']
-
-                            pload = {
-                                "dpid": {dpid_sw}, "cookie": 1,
-                                "cookie_mask": 1, "table_id": {sw_table},
-                                "idle_timeout": {idle_timeout},
-                                "hard_timeout": {hard_timeout},
-                                "priority": 10, "flags": 1,
-                                "match": {
-                                    "ipv4_src": src_ip,
-                                    "ipv4_dst": dst_ip, "ip_proto": proto
-                                    },
-                                "actions": []
-                                }
-                            r = requests.post(
-                                f'http://{controller}:{ctrl_port}'
-                                f'{add_flow_entry}', data=pload)
-                            print(r.text, r.status_code)
-                        print('\ncurrently rules\n')
+                            logger.ifo(f"Drop flow with SRC={src_ip} and DST={dst_ip}")
+                            match = '"ipv4_dst": "{}", "eth_type": 2048, "ipv4_src": "{}", "eth_type": 2048'.format( dst_ip, src_ip)
+                            match = ('{%s}' %match)
+                            pload = '"dpid": {}, "cookie": 1, "cookie_mask":1, "table_id": {}, "idle_timeout": {}, "hard_timeout": {}, "priority": 10, "match": {}, "actions": []'.format(dpid_sw, sw_table, idle_timeout, hard_timeout, match)
+                            pload = ('{%s}' %(pload))
+                            r = requests.post(url, data=pload)
                         r = requests.get(
-                            f'http://{controller}:{ctrl_port}{get_flows_stats}'
+                            f'http://{controller}:{controller_port}{get_flows_stats}'
                             )
-                        print(r.text)
                     os.remove(filepath)
             except Exception as e:
-                print(e)
+                logger.error(e)
+                number_lines = sum(1 for row in (open(input_file)))
+                if number_lines == 0:
+                    os.remove(filepath)

@@ -7,11 +7,6 @@ import sys
 from cicflowmeter.sniffer import create_sniffer
 from shared import localstore, parentdir
 
-# root_folder = os.path.abspath(os.path.dirname(
-#     os.path.dirname(os.path.abspath(__file__))))
-# sys.path.append(root_folder)
-
-
 config = configparser.ConfigParser()
 
 capturedir = parentdir + '/captures'
@@ -30,8 +25,7 @@ def FeatureExtraction():
                 if input_file != os.path.join(
                     capturedir, f'capture_{count}.pcap'
                     ) and input_file != os.path.join(
-                        capturedir, f'capture_{count + 1}.pcap'
-                        ):
+                        capturedir, f'capture_{count + 1}.pcap'):
                     output = filepath.replace(
                         'captures', 'features'
                         ).replace('capture', 'flow').replace('.pcap', '.csv')
@@ -52,7 +46,7 @@ def FeatureExtraction():
                         sniffer.join()
                     os.remove(filepath)
             except Exception as e:
-                print(e)
+                logger.error(e)
 
 
 if __name__ == '__main__':

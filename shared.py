@@ -11,11 +11,11 @@ localstore = parentdir + "/localstore.txt"
 
 controller = os.getenv('CTRL')
 controller_port = os.getenv('CTRL_PORT')
-sw_table = os.getenv('TABLE')
-dpid_sw = os.getenv('SW')
+sw_table = int(os.getenv('TABLE'))
+dpid_sw = int(os.getenv('SW'))
 targets = os.getenv('TARGETS')
-hard_timeout = os.getenv('HARD_T')
-idle_timeout = os.getenv('IDLE_T')
+hard_timeout = int(os.getenv('HARD_T'))
+idle_timeout = int(os.getenv('IDLE_T'))
 # Logger config
 logs_directory = os.path.dirname(
     os.path.realpath(__file__)) + os.getenv('LOG_FILES_DIRECTORY')
