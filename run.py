@@ -16,7 +16,7 @@ logger.info('Initiating the Sniffer and feature extraction in a thread')
 th1.start()
 # logger.info('Initiating the Features in a second thread')
 # th2.start()
-loger.info('Initiating the classifier in a third thread')
+logger.info('Initiating the classifier in a third thread')
 th3.start()
 
 

@@ -4,9 +4,12 @@ import os
 import sys
 import time
 
+import numpy as np
 import requests
 from shared import (controller, controller_port, dpid_sw, hard_timeout,
-                    idle_timeout, localstore, logger, parentdir, sw_table)
+                    idle_timeout, localstore, logger, parentdir,
+                    repeated_threshold, sw_table, threshold_pkts_attack,
+                    threshold_pkts_benign)
 
 from src.ClassifierGMM import ClassifierGMM
 
@@ -25,6 +28,8 @@ def classificator():
     GmmClassifier = ClassifierGMM(
         gmm_attack=gmm_attack, gmm_benign=gmm_benign,
         standarscaler=scaler, pcatransformation=pca)
+        
+    high_throughput = 0
     while True:
         config.read(localstore)
         count = int(config['SNIFFER']['Count'])
@@ -38,8 +43,7 @@ def classificator():
                         ) and input_file != os.path.join(
                             featuresdir, f'flow_0.csv'
                             ):
-                    time.sleep(1)
-                    logger.info(f'analyzing the file:{input_file}')
+                    logger.info(f'#### analyzing the file:{input_file} ###\n')
                     data_clean, metadata = GmmClassifier.preprocess(
                         file=input_file)
                     std_data = GmmClassifier.standardize(data=data_clean)
@@ -60,7 +64,7 @@ def classificator():
                             src_port = row['src_port']
                             dst_port = row['dst_port']
                             proto = row['protocol']
-                            logger.ifo(f"Drop flow with SRC={src_ip} and DST={dst_ip}")
+                            logger.info(f"## Drop flow with SRC={src_ip} and DST={dst_ip} ##")
                             match = '"ipv4_dst": "{}", "eth_type": 2048, "ipv4_src": "{}", "eth_type": 2048'.format( dst_ip, src_ip)
                             match = ('{%s}' %match)
                             pload = '"dpid": {}, "cookie": 1, "cookie_mask":1, "table_id": {}, "idle_timeout": {}, "hard_timeout": {}, "priority": 10, "match": {}, "actions": []'.format(dpid_sw, sw_table, idle_timeout, hard_timeout, match)
@@ -69,6 +73,39 @@ def classificator():
                         r = requests.get(
                             f'http://{controller}:{controller_port}{get_flows_stats}'
                             )
+
+                    benignData = data_clean.loc[~data_clean.index.isin(
+                        detection)]
+                    throughput_max = np.max(benignData["Fwd Packets/s"])
+                    throughput_min = np.min(benignData["Fwd Packets/s"])
+                    throughput_mean = np.mean(benignData["Fwd Packets/s"])
+                    throughput_tot = np.sum(benignData["Fwd Packets/s"])
+                    attackData = data_clean.iloc[detection]
+                    attack_throughput_max = np.max(attackData["Fwd Packets/s"])
+                    attack_throughput_min = np.min(attackData["Fwd Packets/s"])
+                    attack_throughput_mean = np.mean(attackData["Fwd Packets/s"])
+                    attack_throughput_tot = np.sum(attackData["Fwd Packets/s"])
+                    logger.info("{:<15} {:<15} {:<15} {:<15}".format(
+                        'att_pkt_tot', 'att_pkt_min', 'att_pkt_max',
+                        'att_pkt_mean'))
+                    logger.info("{:<15} {:<15} {:<15} {:<15}".format(
+                        attack_throughput_tot, attack_throughput_min,
+                        attack_throughput_max, attack_throughput_mean))
+                    logger.info("{:<15} {:<15} {:<15} {:<15}".format(
+                        'bng_pkt_tot', 'bng_pkt_min', 'bng_pkt_max',
+                        'bng_pkt_mean'))
+                    logger.info("{:<15} {:<15} {:<15} {:<15}".format(
+                        throughput_tot, throughput_min, throughput_max,
+                        throughput_mean))
+                    if (attack_throughput_max <= threshold_pkts_attack):
+                        if (throughput_mean > threshold_pkts_benign):
+                            logger.info("####====high througput====####\n")
+                            high_throughput += 1
+                            if (high_throughput > repeated_threshold):
+                                logger.info("========The NS needs a Loadbalancer======\n")
+                                high_throughput = 0
+                        logger.info("low througput")
+                        high_throughput = 0
                     os.remove(filepath)
             except Exception as e:
                 logger.error(e)

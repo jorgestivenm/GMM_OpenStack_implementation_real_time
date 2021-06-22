@@ -4,7 +4,7 @@ import sys
 import time
 
 from cicflowmeter.sniffer import create_sniffer
-from shared import iface, localstore, parentdir
+from shared import iface, localstore, logger, parentdir
 
 config = configparser.ConfigParser()
 

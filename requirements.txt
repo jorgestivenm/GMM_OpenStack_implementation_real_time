@@ -12,7 +12,7 @@ isort==5.8.0
 joblib==1.0.1
 lazy-object-proxy==1.6.0
 mccabe==0.6.1
-numpy==1.20.2
+numpy==1.20.3
 pandas==1.2.4
 pipenv==2020.11.15
 pycodestyle==2.7.0
@@ -23,9 +23,9 @@ python-dotenv==0.17.0
 python-libpcap==0.4.0
 pytz==2021.1
 requests==2.25.1
-scapy==2.4.5
+scapy==2.4.4
 scikit-learn==0.23.2
-scipy==1.6.2
+scipy==1.7.0
 six==1.15.0
 sklearn==0.0
 threadpoolctl==2.1.0
