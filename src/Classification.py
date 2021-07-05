@@ -7,7 +7,7 @@ import time
 import numpy as np
 import requests
 from shared import (controller, controller_port, dpid_sw, hard_timeout,
-                    idle_timeout, localstore, logger, parentdir,
+                    idle_timeout, localstore, logger, nova_url, parentdir,
                     repeated_threshold, sw_table, threshold_pkts_attack,
                     threshold_pkts_benign)
 
@@ -23,14 +23,49 @@ scaler = parentdir + '/ml/standardize/scaler.pickle'
 get_flows_stats = f'/stats/flow/{dpid_sw}'
 add_flow_entry = f'/stats/flowentry/add'
 
+lb_working = False
+token = False
+
 
 def classificator():
+    global token
+    global lb_working
     GmmClassifier = ClassifierGMM(
         gmm_attack=gmm_attack, gmm_benign=gmm_benign,
         standarscaler=scaler, pcatransformation=pca)
         
     high_throughput = 0
     while True:
+        # getting token
+        if (not token):
+            body_token = """{   
+                "auth": {
+                    "identity": {
+                            "methods": ["password"],
+                            "password": {
+                                "user": {
+                                    "name": "admin",
+                                    "domain": { "id": "default" },
+                                    "password": "admin"
+                                }
+                            }
+                        },
+                    "scope": {
+                            "project": {
+                                "name": "admin",
+                                "domain": { "id": "default" }
+                            }
+                        }
+                    }
+                }"""
+            r = requests.post(
+                "http://192.168.100.110:5000/v3/auth/tokens",
+                data=body_token
+                )
+            headers = r.headers
+            token_ok = headers['X-Subject-Token']
+            logger.info(f'token : {token_ok}')
+            token = True
         config.read(localstore)
         count = int(config['SNIFFER']['Count'])
         for filepath in glob.glob(os.path.join(featuresdir, '*.csv')):
@@ -104,6 +139,12 @@ def classificator():
                             if (high_throughput > repeated_threshold):
                                 logger.info("========The NS needs a Loadbalancer======\n")
                                 high_throughput = 0
+                                if (not lb_working):
+                                    body = '{"os-start" : null}'
+                                    r = requests.post(
+                                        nova_url, data=body, headers={'X-Auth-Token': token_ok}
+                                        )
+                                    logger.info("the second WEB server has been activated")
                         logger.info("low througput")
                         high_throughput = 0
                     os.remove(filepath)

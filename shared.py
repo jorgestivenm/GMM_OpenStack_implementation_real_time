@@ -19,6 +19,10 @@ idle_timeout = int(os.getenv('IDLE_T'))
 threshold_pkts_attack = int(os.getenv('MIN_TROUGH_DETECTION_ATTACK_NUMBER'))
 threshold_pkts_benign = int(os.getenv('TROUGHPUT_THRESHOLD_BENIGN'))
 repeated_threshold = int(os.getenv('REPEATED_THRESHOLD'))
+tenant_id = os.getenv('TENANT_ID')
+server2 = os.getenv('SERVER2')
+nova_url = os.getenv('NOVA_URL') + tenant_id + '/servers/' + server2 + '/action'
+
 # Logger config
 logs_directory = os.path.dirname(
     os.path.realpath(__file__)) + os.getenv('LOG_FILES_DIRECTORY')

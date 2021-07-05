@@ -20,7 +20,7 @@ OPTIONS:
 "
 
 
-create_pmeMain_serviceFile()
+create_Main_serviceFile()
 {
 PYTHON_BIN="$(which python3.8)"
 echo "[Unit]
@@ -42,17 +42,24 @@ User=${USER}
 WantedBy=multi-user.target" > ./utils/systemd/dmdos.service 
 }
 
-create_pmeMain_envFile()
+create_Main_envFile()
 {
 echo "IFACE=${DEF_IFACE}
-CTRL="192.168.100.129"
+CTRL='192.168.100.129'
 CTRL_PORT=8080
 TABLE=60
 SW=1
-TARGETS="192.168.100.232,192.168.100.249"
+TARGETS='192.168.100.232,192.168.100.249'
 HARD_T=3600
 IDLE_T=1800
-LOG_FILES_DIRECTORY="/logs"" > $PROJECT_DIR/.env
+LOG_FILES_DIRECTORY='/logs'
+MIN_TROUGH_DETECTION_ATTACK_NUMBER=500
+TROUGHPUT_THRESHOLD_BENIGN=10000
+REPEATED_THRESHOLD=5
+TENANT_ID=38abe714f498458daf6c2233d72459f6
+SERVER1=8fa29bb1-6254-4d53-a0a3-ef02b731725e
+SERVER2=2f55e8c8-80f2-4568-8d53-7169d110bee7
+NOVA_URL=http://192.168.100.110:8774/v2.1/" > $PROJECT_DIR/.env
 
 }
 
@@ -84,7 +91,7 @@ if [ ! -f /etc/systemd/system/dmdos.service ]; then
     if [ ! -d ./utils/systemd ]; then
         mkdir ./utils/systemd
     fi
-    $(create_pmeMain_serviceFile)
+    $(create_Main_serviceFile)
     sudo cp ./utils/systemd/dmdos.service /etc/systemd/system
     sudo systemctl daemon-reload
     sudo systemctl enable dmdos.service
@@ -101,6 +108,7 @@ mkdir ${PROJECT_DIR}/captures
 mkdir ${PROJECT_DIR}/features
 mkdir ${PROJECT_DIR}/logs
 touch ${PROJECT_DIR}/logs/gmm_detection.log
+$(create_Main_envFile)
 }
 
 
@@ -178,3 +186,50 @@ done
 #         else:
 #             return min(v)
 # """
+
+# sudo ovs-vsctl -- set Bridge br-int mirrors=@m2  -- --id=@qvo5c67a4bc-c9 get Port qvo5c67a4bc-c9  -- --id=@qvoa570fe19-8b get Port qvoa570fe19-8b  -- --id=@m2 create Mirror name=mirrortolb select-dst-port=@qvo5c67a4bc-c9 select-src-port=@qvo5c67a4bc-c9 output-port=@qvoa570fe19-8b
+
+# curl -i   -H "Content-Type: application/json"   -d '
+# {   "auth": {
+#        "identity": {
+#             "methods": ["password"],
+#             "password": {
+#                 "user": {
+#                     "name": "admin",
+#                     "domain": { "id": "default" },
+#                     "password": "admin"
+#                 }
+#             }
+#         },
+#        "scope": {
+#             "project": {
+#                 "name": "admin",
+#                 "domain": { "id": "default" }
+#             }
+#         }
+#     }
+# }'   "http://localhost:5000/v3/auth/tokens" ; echo
+
+# OS_TOKEN=
+
+# tenant_id=38abe714f498458daf6c2233d72459f6
+# web1=8fa29bb1-6254-4d53-a0a3-ef02b731725e
+# web2=2f55e8c8-80f2-4568-8d53-7169d110bee7
+# start server server POST
+
+# http://192.168.100.110:8774/v2.1/%(tenant_id)s/servers/{server_id}/action
+# {
+#     "os-start" : null | 
+# }
+
+# stop server 
+
+# http://192.168.100.110:8774/v2.1/%(tenant_id)s/servers/{server_id}/action
+# {
+#     "os-stop" : null
+# }
+
+# curl -i -H "Content-Type: application/json" -H "X-Auth-Token: $OS_TOKEN" -d '
+# {
+#     "os-start" : null
+# } ' "http://192.168.100.110:8774/v2.1/38abe714f498458daf6c2233d72459f6/servers/8fa29bb1-6254-4d53-a0a3-ef02b731725e/action"
