@@ -6,10 +6,10 @@ import time
 
 import numpy as np
 import requests
-from shared import (controller, controller_port, dpid_sw, hard_timeout,
-                    idle_timeout, localstore, logger, nova_url, parentdir,
-                    repeated_threshold, sw_table, threshold_pkts_attack,
-                    threshold_pkts_benign)
+from shared import (avoided_ips, controller, controller_port, dpid_sw,
+                    hard_timeout, idle_timeout, localstore, logger, nova_url,
+                    parentdir, repeated_threshold, sw_table,
+                    threshold_pkts_attack, threshold_pkts_benign)
 
 from src.ClassifierGMM import ClassifierGMM
 
@@ -99,12 +99,15 @@ def classificator():
                             src_port = row['src_port']
                             dst_port = row['dst_port']
                             proto = row['protocol']
-                            logger.info(f"## Drop flow with SRC={src_ip} and DST={dst_ip} ##")
-                            match = '"ipv4_dst": "{}", "eth_type": 2048, "ipv4_src": "{}", "eth_type": 2048'.format( dst_ip, src_ip)
-                            match = ('{%s}' %match)
-                            pload = '"dpid": {}, "cookie": 1, "cookie_mask":1, "table_id": {}, "idle_timeout": {}, "hard_timeout": {}, "priority": 10, "match": {}, "actions": []'.format(dpid_sw, sw_table, idle_timeout, hard_timeout, match)
-                            pload = ('{%s}' %(pload))
-                            r = requests.post(url, data=pload)
+                            if (src_ip in avoided_ips or dst_ip in avoided_ips):
+                                pass
+                            else:
+                                logger.info(f"## Drop flow with SRC={src_ip} and DST={dst_ip} ##")
+                                match = '"ipv4_dst": "{}", "eth_type": 2048, "ipv4_src": "{}", "eth_type": 2048'.format( dst_ip, src_ip)
+                                match = ('{%s}' %match)
+                                pload = '"dpid": {}, "cookie": 1, "cookie_mask":1, "table_id": {}, "idle_timeout": {}, "hard_timeout": {}, "priority": 10, "match": {}, "actions": []'.format(dpid_sw, sw_table, idle_timeout, hard_timeout, match)
+                                pload = ('{%s}' %(pload))
+                                r = requests.post(url, data=pload)
                         r = requests.get(
                             f'http://{controller}:{controller_port}{get_flows_stats}'
                             )
