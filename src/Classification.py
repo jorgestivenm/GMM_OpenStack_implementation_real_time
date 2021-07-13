@@ -25,7 +25,7 @@ add_flow_entry = f'/stats/flowentry/add'
 
 lb_working = False
 token = False
-
+logger.info(f'{parentdir},{featuresdir}')
 
 def classificator():
     global token
@@ -111,17 +111,30 @@ def classificator():
                         r = requests.get(
                             f'http://{controller}:{controller_port}{get_flows_stats}'
                             )
-
+                    logger.debug(detection)
                     benignData = data_clean.loc[~data_clean.index.isin(
                         detection)]
-                    throughput_max = np.max(benignData["Fwd Packets/s"])
-                    throughput_min = np.min(benignData["Fwd Packets/s"])
-                    throughput_mean = np.mean(benignData["Fwd Packets/s"])
+                    if (len(benignData["Fwd Packets/s"]) == 0):
+                        throughput_max = 0.0
+                        throughput_min = 0.0
+                        throughput_mean = 0.0
+                    else:
+                        logger.debug(benignData["Fwd Packets/s"])
+                        throughput_max = np.max(benignData["Fwd Packets/s"])
+                        throughput_min = np.min(benignData["Fwd Packets/s"])
+                        throughput_mean = np.mean(benignData["Fwd Packets/s"])
                     throughput_tot = np.sum(benignData["Fwd Packets/s"])
+
                     attackData = data_clean.iloc[detection]
-                    attack_throughput_max = np.max(attackData["Fwd Packets/s"])
-                    attack_throughput_min = np.min(attackData["Fwd Packets/s"])
-                    attack_throughput_mean = np.mean(attackData["Fwd Packets/s"])
+                    if (len(attackData["Fwd Packets/s"]) == 0):
+                        attack_throughput_max = 0.0
+                        attack_throughput_min = 0.0
+                        attack_throughput_mean = 0.0
+                    else:
+                        logger.debug(attackData["Fwd Packets/s"])
+                        attack_throughput_max = np.max(attackData["Fwd Packets/s"])
+                        attack_throughput_min = np.min(attackData["Fwd Packets/s"])
+                        attack_throughput_mean = np.mean(attackData["Fwd Packets/s"])
                     attack_throughput_tot = np.sum(attackData["Fwd Packets/s"])
                     logger.info("{:<15} {:<15} {:<15} {:<15}".format(
                         'att_pkt_tot', 'att_pkt_min', 'att_pkt_max',
@@ -148,8 +161,11 @@ def classificator():
                                         nova_url, data=body, headers={'X-Auth-Token': token_ok}
                                         )
                                     logger.info("the second WEB server has been activated")
-                        logger.info("low througput")
-                        high_throughput = 0
+                        else:
+                            logger.info("High throughput interrupted -> Initial state = 0")
+                            high_throughput = 0
+                    else:
+                        logger.info("High attack througput")
                     os.remove(filepath)
             except Exception as e:
                 logger.error(e)
