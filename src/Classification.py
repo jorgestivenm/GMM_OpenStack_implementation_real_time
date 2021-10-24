@@ -92,6 +92,7 @@ def classificator():
                             subset=['src_ip', 'dst_ip'], keep=False,
                             inplace=False)
                         logger.info('creating rules to apply in the sw')
+                        data_for_rules.to_csv(parentdir + '/logs/rulesdata.csv', mode='a')
                         url = f'http://{controller}:{controller_port}{add_flow_entry}'
                         for index, row in data_for_rules.iterrows():
                             src_ip = str(row['src_ip'])
@@ -99,7 +100,8 @@ def classificator():
                             src_port = row['src_port']
                             dst_port = row['dst_port']
                             proto = row['protocol']
-                            if (src_ip in avoided_ips or dst_ip in avoided_ips):
+                            if (src_ip in avoided_ips):
+                                logger.debug(f'Attack SRC ip: {src_ip} DST ip: {dst_ip}')
                                 pass
                             else:
                                 logger.info(f"## Drop flow with SRC={src_ip} and DST={dst_ip} ##")
@@ -109,8 +111,7 @@ def classificator():
                                 pload = ('{%s}' %(pload))
                                 r = requests.post(url, data=pload)
                         r = requests.get(
-                            f'http://{controller}:{controller_port}{get_flows_stats}'
-                            )
+                            f'http://{controller}:{controller_port}{get_flows_stats}')
 
                     benignData = data_clean.loc[~data_clean.index.isin(
                         detection)]
@@ -119,10 +120,16 @@ def classificator():
                     throughput_mean = np.mean(benignData["Fwd Packets/s"])
                     throughput_tot = np.sum(benignData["Fwd Packets/s"])
                     attackData = data_clean.iloc[detection]
-                    attack_throughput_max = np.max(attackData["Fwd Packets/s"])
-                    attack_throughput_min = np.min(attackData["Fwd Packets/s"])
-                    attack_throughput_mean = np.mean(attackData["Fwd Packets/s"])
+                    if (attackData["Fwd Packets/s"] is None):
+                        attack_throughput_max = 0.0
+                        attack_throughput_min = 0.0
+                        attack_throughput_mean = 0.0
+                    else:
+                        attack_throughput_max = np.max(attackData["Fwd Packets/s"])
+                        attack_throughput_min = np.min(attackData["Fwd Packets/s"])
+                        attack_throughput_mean = np.mean(attackData["Fwd Packets/s"])
                     attack_throughput_tot = np.sum(attackData["Fwd Packets/s"])
+                    
                     logger.info("{:<15} {:<15} {:<15} {:<15}".format(
                         'att_pkt_tot', 'att_pkt_min', 'att_pkt_max',
                         'att_pkt_mean'))
@@ -135,19 +142,33 @@ def classificator():
                     logger.info("{:<15} {:<15} {:<15} {:<15}".format(
                         throughput_tot, throughput_min, throughput_max,
                         throughput_mean))
+                    throughput_data = pd.DataFrame(
+                        [[
+                            throughput_max, throughput_min, throughput_mean,
+                            throughput_tot, attack_throughput_max,
+                            attack_throughput_min, attack_throughput_mean,
+                            attack_throughput_tot]],
+                        columns=[
+                            'bng_pkt_max', 'bng_pkt_min', 'bng_pkt_mean',
+                            'bng_pkt_tot', 'att_pkt_max', 'att_pkt_min',
+                            'att_pkt_mean', 'att_pkt_tot'])
+                    throughput_data.to_csv(parentdir + '/logs/throughput_info.csv', mode='a')
                     if (attack_throughput_max <= threshold_pkts_attack):
-                        if (throughput_mean > threshold_pkts_benign):
+                        if (throughput_max >= threshold_pkts_benign):
                             logger.info("####====high througput====####\n")
                             high_throughput += 1
                             if (high_throughput > repeated_threshold):
                                 logger.info("========The NS needs a Loadbalancer======\n")
-                                high_throughput = 0
                                 if (not lb_working):
                                     body = '{"os-start" : null}'
                                     r = requests.post(
                                         nova_url, data=body, headers={'X-Auth-Token': token_ok}
                                         )
+                                    logger.info(r)
                                     logger.info("the second WEB server has been activated")
+                                    if (r.status_code == 202):
+                                        high_throughput = 0
+                                        lb_working = True
                         logger.info("low througput")
                         high_throughput = 0
                     os.remove(filepath)
