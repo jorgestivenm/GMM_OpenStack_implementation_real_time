@@ -28,6 +28,6 @@ avoided_ips = avoided_ips.split(',')
 logs_directory = os.path.dirname(
     os.path.realpath(__file__)) + os.getenv('LOG_FILES_DIRECTORY')
 logging.basicConfig(
-    filename=logs_directory+'/gmm_detection.log', level=logging.INFO,
+    filename=logs_directory+'/gmm_detection.log', level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("gmm_detection")
